@@ -1,94 +1,89 @@
-# FRACTAL – The Infinite Zoom Context Canvas
+# FRACTAL
 
-> **Proactive AI that finds hidden contradictions in documents without a single search query.**
+> **An infinite zoom semantic canvas for finding hidden contradictions in documents.**
 
-Built for the **ZERO ORIGIN Hackathon 2026 — Round 1 Submission**.
+---
+
+## What is FRACTAL?
+
+FRACTAL transforms dense legal and financial documents into an interactive **semantic galaxy**.
+
+Every dot represents a clause. Similar clauses cluster together. Dangerous or contradictory clauses are automatically highlighted in red using topological anomaly detection — **no search query required**.
+
+Think of it as **Google Maps for 500-page contracts**.
 
 ---
 
 ## The Problem
 
-Legal and financial professionals review 500+ page contracts using `Ctrl+F` and linear scrolling. This is fundamentally broken because **you cannot search for a risk you don't know exists** — the "unknown unknowns."
+Legal professionals rely on `Ctrl+F` to find risks in contracts. This is fundamentally broken because **you cannot search for a risk you don't know exists**.
 
-For example, a contract might contain:
+Consider a contract with:
+- **Section 4.2**: *"The vendor assumes unlimited liability."*
+- **Section 12.7**: *"Vendor liability is capped at $10,000."*
 
-- **Section 4.2:** *"The vendor assumes unlimited liability."*
-- **Section 12.7:** *"Vendor liability is capped at $10,000."*
-
-These contradictions can be buried hundreds of pages apart. By the time a lawyer finds them, millions of dollars in legal risk has been signed away.
-
----
-
-## The Solution
-
-**FRACTAL** transforms documents into an interactive **semantic galaxy**.
-
-- Each dot represents a clause.
-- Similar clauses cluster together (using UMAP dimensionality reduction).
-- Dangerous or unusual clauses are automatically highlighted using **Isolation Forest** anomaly detection — no search query required.
-
-Think of it like **Google Maps for legal documents**: zoom out to see the whole document, zoom in to read individual clauses.
+These contradictions can be buried hundreds of pages apart. By the time a lawyer finds them, millions of dollars in risk has been signed away.
 
 ---
 
-## The Core Innovation
+## The Innovation
 
-Traditional document search engines are **reactive** — they wait for the user to ask a question.
+Traditional search tools are **reactive** — they wait for a user to type a keyword.
 
-**FRACTAL is proactive.** By applying topological anomaly detection (Isolation Forest) directly to embedding vectors, we surface risks the user never knew to look for.
+FRACTAL is **proactive**. We apply Isolation Forest (topological anomaly detection) directly to text embedding vectors. Clauses that are mathematically isolated from their semantic neighbors are automatically flagged as anomalies.
 
----
-
-## Demo Features (Round 1 Prototype)
-
-✅ Cinematic auto-demo (plays 2s after page load)  
-✅ Infinite pan and scroll-wheel zoom  
-✅ 1,005 clauses rendered as glowing dots  
-✅ 5 semantic clusters (Payment, Termination, Indemnification, Confidentiality, Liability)  
-✅ Auto-pulsing red anomalies (contradictions)  
-✅ Click any dot to inspect the underlying clause  
-✅ Anomaly modal with Isolation Forest confidence scores  
-✅ Legend and live stats panel  
-
----
-
-## Tech Stack
-
-| Layer | Round 1 (Current) | Round 2 (Planned) |
-| :--- | :--- | :--- |
-| **Frontend** | HTML5 Canvas + JavaScript | Same |
-| **Embeddings** | Hardcoded demo data | Google Gemini Embeddings |
-| **Dimensionality Reduction** | N/A (pre-positioned clusters) | UMAP |
-| **Anomaly Detection** | Simulated | Isolation Forest (Python) |
-| **Deployment** | GitHub Pages | Same + Vercel |
-
----
-
-## How to Run
-
-1. Open `index.html` in any modern browser.
-2. Wait 2 seconds for the cinematic auto-demo to begin.
-3. Drag to pan. Scroll to zoom. Click any dot to inspect.
-
-Zero dependencies. Zero build steps.
+**The user doesn't need to know what to search for. The system finds the risk.**
 
 ---
 
 ## How It Works
 
-1. **Ingestion**: Split a document into 1-2 sentence chunks.
-2. **Embedding**: Convert each chunk into a 768-dimension vector (semantic fingerprint).
-3. **Dimensionality Reduction**: UMAP compresses vectors into 2D (X/Y coordinates).
-4. **Anomaly Detection**: Isolation Forest identifies chunks that are mathematically isolated from their neighbors.
-5. **Visualization**: Each chunk is a dot. Isolated anomalies glow red.
+1. **Split**: A document is broken into sentence-level chunks.
+2. **Embed**: Each chunk is converted into a 768-dimensional vector (a semantic fingerprint).
+3. **Reduce**: UMAP compresses the vectors into 2D coordinates.
+4. **Detect**: Isolation Forest identifies chunks that are statistically isolated.
+5. **Visualize**: Each chunk becomes a glowing dot. Anomalies glow red.
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+| :--- | :--- |
+| Frontend | HTML5 Canvas + JavaScript |
+| Embeddings | Google Gemini (planned) |
+| Dimensionality Reduction | UMAP (planned) |
+| Anomaly Detection | Isolation Forest / PyOD (planned) |
+| Deployment | GitHub Pages |
+
+---
+
+## Live Demo
+
+🔗 **[View the live demo](https://your-username.github.io/zero-origin/)**
+
+Wait 2 seconds after the page loads — a cinematic walkthrough will begin automatically.
+
+- **Drag** to pan
+- **Scroll** to zoom
+- **Click any dot** to inspect the underlying clause
 
 ---
 
 ## Roadmap
 
-- **Round 2**: Connect real Gemini API for live document embeddings.
-- **Round 2**: Integrate Python backend (UMAP + Isolation Forest).
-- **Round 3**: PDF upload, side-by-side text view, and search overlay.
+- [x] Interactive infinite pan/zoom canvas
+- [x] Semantic cluster visualization
+- [x] Anomaly highlighting (simulated)
+- [ ] Live Gemini API integration
+- [ ] Python backend for real Isolation Forest computation
+- [ ] PDF upload and side-by-side text viewer
+
+---
+
+## Running Locally
+
+Open `index.html` in any modern browser. Zero dependencies. Zero build steps.
 
 ---
 
