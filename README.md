@@ -60,7 +60,7 @@ FRACTAL is **proactive**. We apply Isolation Forest (topological anomaly detecti
 
 ## Live Demo
 
-🔗 **[View the live demo](https://your-username.github.io/zero-origin/)**
+🔗 **[View the live demo]([https://your-username.github.io/zero-origin/](https://varshithroy-ship-it3.github.io/Fractal-Canvas/))**
 
 Wait 2 seconds after the page loads — a cinematic walkthrough will begin automatically.
 
