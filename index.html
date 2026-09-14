@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FRACTAL — Infinite Canvas</title>
+    <style>
+        * { margin: 0; padding: 0; overflow: hidden; box-sizing: border-box; }
+        body { background: #0a0a0a; font-family: monospace; }
+        canvas { display: block; }
+
+        #title {
+            position: fixed; top: 20px; left: 20px; color: white;
+            z-index: 10; pointer-events: none;
+        }
+        #title h1 {
+            font-size: 24px; background: rgba(0,0,0,0.8);
+            padding: 12px 20px; border-radius: 8px; border: 1px solid #333;
+            line-height: 1.4;
+        }
+        #title span { font-size: 14px; font-weight: normal; color: #8b5cf6; }
+        #title p { margin-top: 8px; font-size: 14px; opacity: 0.6; padding-left: 10px; }
+
+        #search {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(30,30,30,0.9); padding: 10px 24px;
+            border-radius: 50px; border: 1px solid #333;
+            backdrop-filter: blur(10px); color: #aaa;
+            z-index: 10; pointer-events: none;
+        }
+        #search span { color: #555; }
+
+        /* Narration */
+        #narration {
+            position: fixed; bottom: 100px; left: 50%;
+            transform: translateX(-50%);
+            color: white; font-size: 22px; text-align: center;
+            max-width: 700px; padding: 20px 40px;
+            background: rgba(10, 10, 20, 0.85);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 16px;
+            box-shadow: 0 0 40px rgba(139, 92, 246, 0.2);
+            opacity: 0; transition: opacity 0.6s ease;
+            pointer-events: none; z-index: 100;
+            letter-spacing: 0.5px; line-height: 1.4;
+        }
+        #narration.visible { opacity: 1; }
+
+        /* Buttons */
+        #skipBtn, #replayBtn {
+            position: fixed; bottom: 30px; right: 30px;
+            background: rgba(139, 92, 246, 0.9); color: white;
+            border: none; padding: 12px 24px; border-radius: 10px;
+            cursor: pointer; font-family: monospace; font-size: 14px;
+            transition: opacity 0.4s, background 0.2s;
+            z-index: 100; opacity: 0; pointer-events: none;
+        }
+        #skipBtn.visible, #replayBtn.visible {
+            opacity: 1; pointer-events: auto;
+        }
+        #skipBtn:hover, #replayBtn:hover { background: rgba(139, 92, 246, 1); }
+
+        #hint {
+            position: fixed; bottom: 30px; left: 30px;
+            color: rgba(255,255,255,0.4); font-size: 13px;
+            font-family: monospace; z-index: 10; pointer-events: none;
+            transition: opacity 0.6s;
+        }
+        #hint.hidden { opacity: 0; }
+
+        /* Legend */
+        #legend {
+            position: fixed; top: 100px; right: 20px;
+            background: rgba(15, 15, 25, 0.85);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 10px; padding: 16px 20px;
+            color: #ccc; font-size: 12px; z-index: 10;
+            backdrop-filter: blur(10px);
+            transition: opacity 0.6s;
+            pointer-events: none;
+        }
+        #legend.hidden { opacity: 0; }
+        #legend h3 {
+            font-size: 11px; text-transform: uppercase;
+            letter-spacing: 1.5px; color: #8b5cf6;
+            margin-bottom: 10px; font-weight: bold;
+        }
+        #legend .item {
+            display: flex; align-items: center;
+            margin-bottom: 6px; gap: 8px;
+        }
+        #legend .dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            display: inline-block; flex-shrink: 0;
+        }
+        #legend .anomaly-item {
+            margin-top: 10px; padding-top: 10px;
+            border-top: 1px solid rgba(255, 51, 51, 0.3);
+        }
+
+        /* Stats Panel */
+        #stats {
+            position: fixed; bottom: 30px; left: 30px;
+            background: rgba(15, 15, 25, 0.85);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 10px; padding: 14px 20px;
+            color: #ccc; font-size: 12px; z-index: 10;
+            backdrop-filter: blur(10px); line-height: 1.8;
+            transition: opacity 0.6s;
+        }
+        #stats.hidden { opacity: 0; }
+        #stats strong { color: #8b5cf6; }
+
+        /* Clause Modal */
+        #clauseModal {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: rgba(15, 15, 25, 0.97);
+            border: 1px solid rgba(139, 92, 246, 0.5);
+            border-radius: 16px;
+            padding: 30px 40px;
+            max-width: 600px; width: 90%;
+            color: white; z-index: 200;
+            box-shadow: 0 20px 80px rgba(139, 92, 246, 0.3);
+            opacity: 0; pointer-events: none;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(20px);
+        }
+        #clauseModal.visible {
+            opacity: 1; pointer-events: auto;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        #clauseModal.anomaly {
+            border-color: rgba(255, 51, 51, 0.7);
+            box-shadow: 0 20px 80px rgba(255, 51, 51, 0.3);
+        }
+        #clauseModal .badge {
+            display: inline-block; font-size: 11px;
+            padding: 4px 10px; border-radius: 20px;
+            text-transform: uppercase; letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+        #clauseModal .badge.normal {
+            background: rgba(139, 92, 246, 0.2);
+            color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.4);
+        }
+        #clauseModal .badge.danger {
+            background: rgba(255, 51, 51, 0.15);
+            color: #ff5555; border: 1px solid rgba(255, 51, 51, 0.5);
+        }
+        #clauseModal .cluster-label {
+            font-size: 11px; color: #666;
+            text-transform: uppercase; letter-spacing: 1.5px;
+            margin-bottom: 8px;
+        }
+        #clauseModal .clause-text {
+            font-size: 18px; line-height: 1.6;
+            color: #eee; margin-bottom: 20px;
+            font-family: Georgia, serif;
+            font-style: italic;
+        }
+        #clauseModal .meta {
+            font-size: 13px; color: #888;
+            padding-top: 16px; border-top: 1px solid #222;
+            line-height: 1.6;
+        }
+        #clauseModal .warning {
+            background: rgba(255, 51, 51, 0.1);
+            border-left: 3px solid #ff3333;
+            padding: 12px 16px;
+            margin-top: 16px; border-radius: 6px;
+            font-size: 14px; color: #ff9999;
+            line-height: 1.5;
+        }
+        #clauseModal .close-btn {
+            position: absolute; top: 16px; right: 20px;
+            background: none; border: none; color: #666;
+            font-size: 24px; cursor: pointer;
+            font-family: monospace; padding: 5px 10px;
+            transition: color 0.2s;
+        }
+        #clauseModal .close-btn:hover { color: #fff; }
+    </style>
+</head>
+<body>
+
+    <div id="title">
+        <h1>FRACTAL <span>| Infinite Canvas</span></h1>
+        <p>⚡ Drag to pan · Scroll to zoom · Click a dot to inspect</p>
+    </div>
+
+    <div id="search">⌘ K <span>Search for anything...</span></div>
+    <div id="hint">Auto-demo starting in 2s...</div>
+    <div id="narration"></div>
+
+    <div id="legend">
+        <h3>Semantic Clusters</h3>
+        <div class="item"><span class="dot" style="background:#3b82f6"></span>Payment Terms</div>
+        <div class="item"><span class="dot" style="background:#8b5cf6"></span>Termination</div>
+        <div class="item"><span class="dot" style="background:#ec4899"></span>Indentification</div>
+        <div class="item"><span class="dot" style="background:#06b6d4"></span>Confidentiality</div>
+        <div class="item"><span class="dot" style="background:#f59e0b"></span>Liability</div>
+        <div class="item anomaly-item"><span class="dot" style="background:#ff3333"></span>⚠️ Anomaly Detected</div>
+    </div>
+
+    <div id="stats">
+        <strong>1,005</strong> clauses analyzed<br>
+        <strong>5</strong> anomalies flagged<br>
+        <strong>0</strong> keywords required
+    </div>
+
+    <button id="skipBtn">Skip Intro →</button>
+    <button id="replayBtn">↻ Replay Demo</button>
+
+    <div id="clauseModal">
+        <button class="close-btn" onclick="closeModal()">×</button>
+        <div id="modalBadge" class="badge normal">Standard Clause</div>
+        <div id="modalCluster" class="cluster-label">Cluster: Payment Terms</div>
+        <div id="modalText" class="clause-text">...</div>
+        <div id="modalMeta" class="meta">...</div>
+        <div id="modalWarning" class="warning" style="display:none;"></div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        // ============ SETUP ============
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        let offsetX = 0, offsetY = 0, scale = 1;
+        let isDragging = false, startX = 0, startY = 0;
+        let dragStartOffsetX = 0, dragStartOffsetY = 0;
+        let mouseDownTime = 0, mouseDownX = 0, mouseDownY = 0;
+
+        let demoActive = false;
+        let anomalyPulseActive = false;
+        let currentTween = null;
+        let demoTimers = [];
+        let userCancelled = false;
+        let modalOpen = false;
+
+        // ============ FAKE CLAUSE DATABASE ============
+        const clusterTopics = {
+            '#3b82f6': {
+                name: 'Payment Terms',
+                clauses: [
+                    "The Client shall remit payment within thirty (30) days of invoice receipt.",
+                    "Late payments shall accrue interest at a rate of 1.5% per month.",
+                    "All fees are non-refundable upon commencement of services.",
+                    "Invoices must be disputed in writing within ten (10) business days.",
+                    "Payment shall be made in United States Dollars via wire transfer.",
+                ]
+            },
+            '#8b5cf6': {
+                name: 'Termination',
+                clauses: [
+                    "Either party may terminate this Agreement with sixty (60) days written notice.",
+                    "The Company reserves the right to terminate immediately upon material breach.",
+                    "Upon termination, all outstanding obligations shall survive.",
+                    "Termination for convenience requires payment of an early exit fee.",
+                    "This Agreement shall automatically renew for successive one-year terms.",
+                ]
+            },
+            '#ec4899': {
+                name: 'Indemnification',
+                clauses: [
+                    "The Vendor shall indemnify and hold harmless the Client from all claims.",
+                    "Indemnification obligations shall survive termination of this Agreement.",
+                    "The Client shall promptly notify the Vendor of any indemnifiable claims.",
+                    "Indemnification is limited to direct damages and excludes consequential losses.",
+                    "Each party shall bear its own defense costs unless otherwise agreed.",
+                ]
+            },
+            '#06b6d4': {
+                name: 'Confidentiality',
+                clauses: [
+                    "Confidential Information shall not be disclosed to any third party.",
+                    "The receiving party shall use the same degree of care as for its own information.",
+                    "Confidentiality obligations shall survive for a period of five (5) years.",
+                    "Exclusions apply to information that is publicly available or independently developed.",
+                    "Return or destruction of Confidential Information is required upon request.",
+                ]
+            },
+            '#f59e0b': {
+                name: 'Liability',
+                clauses: [
+                    "The Vendor's total liability shall not exceed the fees paid in the prior 12 months.",
+                    "In no event shall either party be liable for indirect or consequential damages.",
+                    "Liability caps shall not apply to gross negligence or willful misconduct.",
+                    "The parties agree that liability limitations are a material term of this Agreement.",
+                    "Liability for breach of confidentiality shall be unlimited.",
+                ]
+            },
+        };
+
+        const anomalyClauses = [
+            {
+                text: "The Vendor assumes UNLIMITED liability for any and all data breaches, regardless of fault or negligence.",
+                cluster: "Liability (CONTRADICTION)",
+                warning: "This clause contradicts 98% of neighboring liability clauses, which cap liability at 12 months of fees. Semantic isolation score: 0.94 (HIGH RISK)."
+            },
+            {
+                text: "The Client waives ALL rights to dispute any invoice, regardless of error or fraud.",
+                cluster: "Payment Terms (CONTRADICTION)",
+                warning: "This clause contradicts the standard 10-day dispute window found in 47 other payment clauses. Semantic isolation score: 0.91 (HIGH RISK)."
+            },
+            {
+                text: "The Company may terminate this Agreement at any time without notice or cause.",
+                cluster: "Termination (CONTRADICTION)",
+                warning: "This clause removes the 60-day notice requirement present in all other termination clauses. Semantic isolation score: 0.89 (HIGH RISK)."
+            },
+            {
+                text: "The Vendor shall have NO indemnification obligations under any circumstances.",
+                cluster: "Indemnification (CONTRADICTION)",
+                warning: "This clause contradicts 23 other indemnification clauses that hold the Vendor responsible. Semantic isolation score: 0.93 (HIGH RISK)."
+            },
+            {
+                text: "Confidential Information may be freely shared with any third party at the Vendor's discretion.",
+                cluster: "Confidentiality (CONTRADICTION)",
+                warning: "This clause directly contradicts the non-disclosure requirement in 31 other confidentiality clauses. Semantic isolation score: 0.96 (HIGH RISK)."
+            },
+        ];
+
+        // ============ GENERATE DOTS ============
+        const dots = [];
+        const clusterCenters = [
+            { x: -300, y: -200, color: '#3b82f6' },
+            { x:  250, y: -280, color: '#8b5cf6' },
+            { x:  320, y:  220, color: '#ec4899' },
+            { x: -280, y:  280, color: '#06b6d4' },
+            { x:    0, y:    0, color: '#f59e0b' },
+        ];
+
+        for (let i = 0; i < 1000; i++) {
+            const cluster = clusterCenters[i % clusterCenters.length];
+            const angle = Math.random() * Math.PI * 2;
+            const radius = Math.pow(Math.random(), 0.6) * 180;
+            const x = cluster.x + Math.cos(angle) * radius;
+            const y = cluster.y + Math.sin(angle) * radius;
+
+            const topic = clusterTopics[cluster.color];
+            const clauseText = topic.clauses[Math.floor(Math.random() * topic.clauses.length)];
+
+            dots.push({
+                x, y,
+                size: 2 + Math.random() * 3,
+                glowSize: 15 + Math.random() * 10,
+                color: cluster.color,
+                isAnomaly: false,
+                text: clauseText,
+                clusterName: topic.name,
+            });
+        }
+
+        const anomalyPositions = [
+            { x:  500, y:  500 },
+            { x: -520, y: -480 },
+            { x:  620, y: -420 },
+            { x: -600, y:  460 },
+            { x:   80, y:  580 },
+        ];
+
+        for (let i = 0; i < anomalyPositions.length; i++) {
+            const pos = anomalyPositions[i];
+            const anomaly = anomalyClauses[i];
+            dots.push({
+                x: pos.x, y: pos.y,
+                size: 5, glowSize: 22,
+                color: '#ff3333',
+                isAnomaly: true,
+                text: anomaly.text,
+                clusterName: anomaly.cluster,
+                warning: anomaly.warning,
+            });
+        }
+
+        // ============ DRAW ============
+        function draw(time) {
+            ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.save();
+            ctx.translate(width / 2 + offsetX, height / 2 + offsetY);
+            ctx.scale(scale, scale);
+
+            const pulse = anomalyPulseActive
+                ? (Math.sin((time || 0) / 300) * 0.5 + 0.5)
+                : 0;
+
+            for (const dot of dots) {
+                const isRed = dot.isAnomaly && anomalyPulseActive;
+                const glowSize = isRed ? dot.glowSize * (1 + pulse * 0.9) : dot.glowSize;
+                const glowColor = isRed ? '#ff2222' : dot.color;
+                const glowAlpha = isRed ? (0.25 + pulse * 0.5) : 0.15;
+
+                const grad = ctx.createRadialGradient(dot.x, dot.y, 0, dot.x, dot.y, glowSize);
+                const alphaHex = Math.floor(glowAlpha * 255).toString(16).padStart(2, '0');
+                grad.addColorStop(0, glowColor + alphaHex);
+                grad.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(dot.x, dot.y, glowSize, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = isRed ? '#ff7777' : '#ffffff';
+                ctx.shadowColor = isRed ? '#ff0000' : dot.color;
+                ctx.shadowBlur = isRed ? (15 + pulse * 15) : 10;
+                ctx.beginPath();
+                ctx.arc(dot.x, dot.y, dot.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
+            ctx.restore();
+        }
+
+        function loop(time) {
+            draw(time);
+            requestAnimationFrame(loop);
+        }
+        requestAnimationFrame(loop);
+
+        // ============ RESIZE ============
+        window.addEventListener('resize', () => {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        });
+
+        // ============ INTERACTION ============
+        canvas.style.cursor = 'grab';
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (demoActive || modalOpen) return;
+            isDragging = true;
+            mouseDownTime = Date.now();
+            mouseDownX = e.clientX;
+            mouseDownY = e.clientY;
+            startX = e.clientX;
+            startY = e.clientY;
+            dragStartOffsetX = offsetX;
+            dragStartOffsetY = offsetY;
+            canvas.style.cursor = 'grabbing';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                offsetX = dragStartOffsetX + (e.clientX - startX);
+                offsetY = dragStartOffsetY + (e.clientY - startY);
+            }
+        });
+
+        window.addEventListener('mouseup', (e) => {
+            if (isDragging) {
+                const dragDistance = Math.hypot(e.clientX - mouseDownX, e.clientY - mouseDownY);
+                const clickTime = Date.now() - mouseDownTime;
+                // If it was a quick tap (not a drag), treat as a click
+                if (dragDistance < 5 && clickTime < 300) {
+                    handleCanvasClick(e.clientX, e.clientY);
+                }
+            }
+            isDragging = false;
+            canvas.style.cursor = 'grab';
+        });
+
+        canvas.addEventListener('wheel', (e) => {
+            if (demoActive || modalOpen) return;
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            scale = Math.min(Math.max(scale * delta, 0.1), 6);
+        }, { passive: false });
+
+        // ============ CLICK DETECTION ============
+        function handleCanvasClick(clientX, clientY) {
+            // Convert screen coords to world coords
+            const worldX = (clientX - width / 2 - offsetX) / scale;
+            const worldY = (clientY - height / 2 - offsetY) / scale;
+
+            // Find the closest dot within a click radius
+            const clickRadius = 20 / scale;
+            let closest = null;
+            let closestDist = Infinity;
+
+            for (const dot of dots) {
+                const dist = Math.hypot(dot.x - worldX, dot.y - worldY);
+                if (dist < closestDist && dist < clickRadius) {
+                    closestDist = dist;
+                    closest = dot;
+                }
+            }
+
+            if (closest) {
+                openModal(closest);
+            }
+        }
+
+        // ============ MODAL ============
+        function openModal(dot) {
+            modalOpen = true;
+
+            const modal = document.getElementById('clauseModal');
+            const badge = document.getElementById('modalBadge');
+            const clusterLabel = document.getElementById('modalCluster');
+            const modalText = document.getElementById('modalText');
+            const modalMeta = document.getElementById('modalMeta');
+            const warning = document.getElementById('modalWarning');
+
+            modalText.textContent = '"' + dot.text + '"';
+            clusterLabel.textContent = 'Cluster: ' + dot.clusterName;
+
+            if (dot.isAnomaly) {
+                modal.classList.add('anomaly');
+                badge.className = 'badge danger';
+                badge.textContent = '⚠️ Anomaly Detected';
+                modalMeta.innerHTML = 'Detected by: <strong style="color:#ff5555">Isolation Forest</strong><br>Semantic drift from cluster centroid: HIGH<br>Confidence: 94%';
+                warning.style.display = 'block';
+                warning.textContent = dot.warning;
+            } else {
+                modal.classList.remove('anomaly');
+                badge.className = 'badge normal';
+                badge.textContent = 'Standard Clause';
+                modalMeta.innerHTML = 'Detected by: <strong style="color:#8b5cf6">Semantic Clustering</strong><br>Similarity to cluster: HIGH<br>Confidence: 97%';
+                warning.style.display = 'none';
+            }
+
+            modal.classList.add('visible');
+        }
+
+        function closeModal() {
+            modalOpen = false;
+            document.getElementById('clauseModal').classList.remove('visible');
+        }
+
+        // Close modal on Escape
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // ============ CAMERA TWEEN ============
+        function tweenCamera(targetScale, targetX, targetY, duration, onDone) {
+            if (currentTween) currentTween.cancel();
+
+            let cancelled = false;
+            const startScale = scale;
+            const startX = offsetX;
+            const startY = offsetY;
+            const t0 = performance.now();
+
+            function step(now) {
+                if (cancelled) return;
+                const t = Math.min((now - t0) / duration, 1);
+                const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+                scale = startScale + (targetScale - startScale) * eased;
+                offsetX = startX + (targetX - startX) * eased;
+                offsetY = startY + (targetY - startY) * eased;
+
+                if (t < 1) {
+                    currentTween = { cancel: () => { cancelled = true; } };
+                    requestAnimationFrame(step);
+                } else {
+                    currentTween = null;
+                    if (onDone) onDone();
+                }
+            }
+
+            currentTween = { cancel: () => { cancelled = true; } };
+            requestAnimationFrame(step);
+        }
+
+        // ============ NARRATION ============
+        function showNarration(text) {
+            const el = document.getElementById('narration');
+            el.classList.remove('visible');
+            setTimeout(() => {
+                el.textContent = text;
+                el.classList.add('visible');
+            }, 250);
+        }
+
+        function hideNarration() {
+            document.getElementById('narration').classList.remove('visible');
+        }
+
+        // ============ AUTO DEMO ============
+        function schedule(delay, action) {
+            demoTimers.push(setTimeout(action, delay));
+        }
+
+        function startAutoDemo() {
+            if (userCancelled) return;
+            demoActive = true;
+            document.getElementById('hint').classList.add('hidden');
+            document.getElementById('skipBtn').classList.add('visible');
+            document.getElementById('legend').classList.add('hidden');
+            document.getElementById('stats').classList.add('hidden');
+
+            schedule(0,     () => showNarration("Imagine this is a 500-page contract."));
+            schedule(800,   () => tweenCamera(0.3, 0, 0, 1500));
+
+            schedule(2600,  () => showNarration("Every dot is a clause."));
+            schedule(3600,  () => tweenCamera(1.5, 450, 300, 1800));
+
+            schedule(5600,  () => showNarration("Similar clauses cluster together."));
+            schedule(7200,  () => { anomalyPulseActive = true; });
+            schedule(7600,  () => showNarration("But contradictions are isolated."));
+
+            schedule(9200,  () => tweenCamera(1.8, -900, -900, 1800));
+            schedule(11200, () => showNarration("FRACTAL finds them. No search required."));
+
+            schedule(13800, () => tweenCamera(0.5, 0, 0, 1500));
+            schedule(15400, () => showNarration("Stop scrolling. Start seeing."));
+
+            schedule(17800, () => endDemo());
+        }
+
+        function endDemo() {
+            demoActive = false;
+            document.getElementById('skipBtn').classList.remove('visible');
+            document.getElementById('replayBtn').classList.add('visible');
+            document.getElementById('legend').classList.remove('hidden');
+            document.getElementById('stats').classList.remove('hidden');
+        }
+
+        // ============ CONTROLS ============
+        document.getElementById('skipBtn').addEventListener('click', () => {
+            userCancelled = true;
+            demoTimers.forEach(t => clearTimeout(t));
+            demoTimers = [];
+            if (currentTween) currentTween.cancel();
+            hideNarration();
+            anomalyPulseActive = false;
+            endDemo();
+        });
+
+        document.getElementById('replayBtn').addEventListener('click', () => {
+            userCancelled = false;
+            scale = 1;
+            offsetX = 0;
+            offsetY = 0;
+            anomalyPulseActive = false;
+            closeModal();
+
+            document.getElementById('replayBtn').classList.remove('visible');
+            document.getElementById('hint').classList.remove('hidden');
+            document.getElementById('hint').textContent = "Replaying demo...";
+
+            setTimeout(() => startAutoDemo(), 200);
+        });
+
+        // ============ START ============
+        setTimeout(() => startAutoDemo(), 2000);
+        console.log('✅ FRACTAL galaxy loaded successfully!');
+    </script>
+</body>
+</html>
